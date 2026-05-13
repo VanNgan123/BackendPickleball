@@ -116,3 +116,6 @@ dist
 .pnp.*
 .vscode
 .vscode/settings.json
+.env
+.env.local
+node_modules/
