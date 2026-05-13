@@ -13,6 +13,10 @@ const CategorySchema = new mongoose.Schema({
         unique: true,
         lowercase:true
     },
+    image: {
+        type: String,
+        default: null
+    },
     parentId:{
         type:mongoose.Schema.Types.ObjectId,
         ref:"Category",

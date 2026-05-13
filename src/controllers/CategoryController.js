@@ -1,10 +1,10 @@
 const categoryService = require("../services/CategoryServices");
-
+const { getImageUrl } = require("../middleware/uploadMiddleware");
 
 const create = async (req, res) => {
   try {
-    console.log("🚀 ~ create ~ req.body:", req.body)
-    const category = await categoryService.createCategory(req.body);
+    const imageUrl = req.file ? getImageUrl(req.file) : null;
+    const category = await categoryService.createCategory(req.body, imageUrl);
     res.status(201).json(category);
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -31,12 +31,14 @@ const getOne = async (req, res) => {
 
 const update = async (req, res) => {
   try {
-    const updated = await categoryService.updateCategory(req.params.id, req.body);
+    const imageUrl = req.file ? getImageUrl(req.file) : null;
+    const updated = await categoryService.updateCategory(req.params.id, req.body, imageUrl);
     res.json(updated);
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
 };
+
 module.exports = {
   create,
   getAll,
