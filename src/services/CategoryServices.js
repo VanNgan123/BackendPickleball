@@ -1,7 +1,8 @@
 const { default: slugify } = require("slugify");
 const Category = require("../models/Category");
+const { deleteImageFile } = require("../middleware/uploadMiddleware");
 
-const createCategory = async ({name, parentId = null}) => {
+const createCategory = async ({ name, parentId = null }, imageUrl = null) => {
   if (!name || typeof name !== "string") {
     throw new Error("Invalid category name");
   }
@@ -12,6 +13,7 @@ const createCategory = async ({name, parentId = null}) => {
     name,
     slug,
     parentId: parentId || null,
+    image: imageUrl || null,
   });
   return category;
 };
@@ -28,7 +30,7 @@ const getCategoryById = async (id) => {
   return category;
 };
 
-const updateCategory = async (id, data) => {
+const updateCategory = async (id, data, imageUrl = null) => {
   const { name, parentId } = data;
 
   const category = await Category.findById(id);
@@ -44,7 +46,27 @@ const updateCategory = async (id, data) => {
 
   if (parentId !== undefined) category.parentId = parentId || null;
 
+  // Nếu có ảnh mới, xoá ảnh cũ và cập nhật
+  if (imageUrl) {
+    if (category.image) {
+      deleteImageFile(category.image);
+    }
+    category.image = imageUrl;
+  }
+
   await category.save();
+  return category;
+};
+
+const deleteCategory = async (id) => {
+  const category = await Category.findByIdAndDelete(id);
+  if (!category) throw new Error("Không tìm thấy danh mục.");
+
+  // Xoá ảnh khi xoá category
+  if (category.image) {
+    deleteImageFile(category.image);
+  }
+
   return category;
 };
 
@@ -53,5 +75,5 @@ module.exports = {
   getAllCategories,
   getCategoryById,
   updateCategory,
-  //   deleteCategory,
+  deleteCategory,
 };

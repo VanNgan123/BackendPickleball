@@ -1,6 +1,61 @@
 const slugify = require("slugify");
 const Product = require("../models/Product");
 const Category = require("../models/Category");
+const { deleteImageFile, getImageUrls } = require("../middleware/uploadMiddleware");
+
+const parseCategories = (categories) => {
+  if (!categories) return [];
+
+  if (Array.isArray(categories)) {
+    return categories.filter(Boolean);
+  }
+
+  if (typeof categories === "string") {
+    const trimmedCategories = categories.trim();
+    if (!trimmedCategories) return [];
+
+    try {
+      const parsedCategories = JSON.parse(trimmedCategories);
+      return Array.isArray(parsedCategories)
+        ? parsedCategories.filter(Boolean)
+        : [parsedCategories];
+    } catch {
+      return [trimmedCategories];
+    }
+  }
+
+  return [categories];
+};
+
+const parseSpecs = (specs) => {
+  if (!specs) return {};
+
+  if (typeof specs === "object") {
+    return specs;
+  }
+
+  if (typeof specs === "string") {
+    const trimmedSpecs = specs.trim();
+    if (!trimmedSpecs) return {};
+
+    try {
+      const parsedSpecs = JSON.parse(trimmedSpecs);
+      if (parsedSpecs && typeof parsedSpecs === "object" && !Array.isArray(parsedSpecs)) {
+        return parsedSpecs;
+      }
+
+      throw new Error("Specs must be a JSON object");
+    } catch (error) {
+      if (error.message === "Specs must be a JSON object") {
+        throw error;
+      }
+
+      throw new Error("Specs phải là JSON hợp lệ");
+    }
+  }
+
+  throw new Error("Specs phải là JSON hợp lệ");
+};
 
 const createProduct = async (data, imageUrls) => {
   const { name, price, categories, specs, stock, salePrice, brand } = data;
@@ -12,11 +67,7 @@ const createProduct = async (data, imageUrls) => {
   const checkProduct = await Product.findOne({ slug });
   if (checkProduct) throw new Error("Product already exists");
 
-  const parsedCategories = categories
-    ? Array.isArray(categories)
-      ? categories
-      : JSON.parse(categories)
-    : [];
+  const parsedCategories = parseCategories(categories);
 
   if (parsedCategories.length > 0) {
     const found = await Category.find({ _id: { $in: parsedCategories } });
@@ -31,7 +82,7 @@ const createProduct = async (data, imageUrls) => {
     salePrice: salePrice || null,
     brand: brand || null,
     categories: parsedCategories,
-    specs: specs ? JSON.parse(specs) : {},
+    specs: parseSpecs(specs),
     stock: stock || 0,
     image: imageUrls || [],
   });
@@ -49,6 +100,88 @@ const getAllProduct = async () => {
   }
 };
 
+// Tìm kiếm & lọc sản phẩm
+const searchAndFilterProducts = async (filters = {}) => {
+  try {
+    const {
+      search = "",
+      category,
+      minPrice = 0,
+      maxPrice = Number.MAX_VALUE,
+      minRating = 0,
+      brand,
+      sort = "newest",
+      page = 1,
+      limit = 12,
+    } = filters;
+
+    // Build query
+    let query = {};
+
+    // Tìm kiếm theo tên
+    if (search) {
+      query.name = { $regex: search, $options: "i" };
+    }
+
+    // Lọc theo danh mục
+    if (category) {
+      query.categories = category;
+    }
+
+    // Lọc theo giá
+    query.price = { $gte: minPrice, $lte: maxPrice };
+
+    // Lọc theo brand
+    if (brand) {
+      query.brand = brand;
+    }
+
+    // Xây dựng sort option
+    let sortOptions = {};
+    switch (sort) {
+      case "price_asc":
+        sortOptions = { price: 1 };
+        break;
+      case "price_desc":
+        sortOptions = { price: -1 };
+        break;
+      case "newest":
+        sortOptions = { createdAt: -1 };
+        break;
+      case "best_seller":
+        sortOptions = { stock: -1 };
+        break;
+      default:
+        sortOptions = { createdAt: -1 };
+    }
+
+    // Pagination
+    const skip = (page - 1) * limit;
+
+    const products = await Product.find(query)
+      .populate("categories", "name slug")
+      .sort(sortOptions)
+      .skip(skip)
+      .limit(limit);
+
+    // Tính tổng số sản phẩm
+    const total = await Product.countDocuments(query);
+
+    return {
+      products,
+      pagination: {
+        total,
+        page,
+        limit,
+        pages: Math.ceil(total / limit),
+      },
+    };
+  } catch (error) {
+    console.log("🚀 ~ searchAndFilterProducts ~ error:", error.message);
+    throw error;
+  }
+};
+
 const getProductById = async (id) => {
   try {
     const product = await Product.findById(id).populate(
@@ -62,18 +195,13 @@ const getProductById = async (id) => {
   }
 };
 
-// -------------------- UPDATE PRODUCT --------------------
 const updateProduct = async (id, data, files) => {
   const product = await Product.findById(id);
   if (!product) throw new Error("Product not found");
-
-  // Nếu có ảnh upload mới → thêm vào cuối mảng
   if (files && files.length > 0) {
-    const newImages = files.map((file) => "/" + file.path);
+    const newImages = getImageUrls(files);
     product.image.push(...newImages);
   }
-
-  // Cập nhật field khác
   product.name = data.name || product.name;
   product.price = data.price || product.price;
   product.description = data.description || product.description;
@@ -81,7 +209,6 @@ const updateProduct = async (id, data, files) => {
   return await product.save();
 };
 
-// -------------------- DELETE PRODUCT IMAGE --------------------
 const deleteProductImage = async (id, index) => {
   const product = await Product.findById(id);
   if (!product) throw new Error("Product not found");
@@ -89,11 +216,8 @@ const deleteProductImage = async (id, index) => {
   const img = product.image[index];
   if (!img) throw new Error("Image not found");
 
-  // Xoá file vật lý trong uploads
-  const filePath = path.join(".", img);
-  if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+  deleteImageFile(img);
 
-  // Xoá khỏi array
   product.image.splice(index, 1);
 
   return await product.save();
@@ -106,10 +230,7 @@ const deleteProduct = async (id) => {
   // Xoá tất cả file ảnh vật lý
   if (product.image && product.image.length > 0) {
     product.image.forEach((imgPath) => {
-      const filePath = path.join(".", imgPath);
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-      }
+      deleteImageFile(imgPath);
     });
   }
 
@@ -118,13 +239,12 @@ const deleteProduct = async (id) => {
   return { message: "Product deleted successfully" };
 };
 
-
-
 module.exports = {
   createProduct,
   getAllProduct,
+  searchAndFilterProducts,
   getProductById,
   updateProduct,
   deleteProductImage,
-  deleteProduct
+  deleteProduct,
 };
