@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const WishlistController = require("../controllers/WishlistController");
-const { authMiddleware } = require("../middleware/authMiddlware");
+const { authMiddleware } = require("../middleware/authMiddleware");
 
 // Tất cả routes yêu cầu đăng nhập
 router.post("/", authMiddleware, WishlistController.addToWishlist);

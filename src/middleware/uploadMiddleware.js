@@ -1,6 +1,7 @@
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
+const crypto = require("crypto");
 
 // Đảm bảo thư mục uploads tồn tại
 const uploadsDir = path.join(__dirname, "../../uploads");
@@ -14,8 +15,8 @@ const storage = multer.diskStorage({
     cb(null, uploadsDir);
   },
   filename: (req, file, cb) => {
-    // Tạo tên file unique: timestamp-originalname
-    const uniqueName = `${Date.now()}-${file.originalname}`;
+    const ext = path.extname(file.originalname);
+    const uniqueName = `${Date.now()}-${crypto.randomBytes(8).toString("hex")}${ext}`;
     cb(null, uniqueName);
   },
 });
@@ -27,7 +28,6 @@ const imageFileFilter = (req, file, cb) => {
     "image/png",
     "image/gif",
     "image/webp",
-    "image/svg+xml",
   ];
 
   if (allowedMimeTypes.includes(file.mimetype)) {
@@ -35,7 +35,7 @@ const imageFileFilter = (req, file, cb) => {
   } else {
     cb(
       new Error(
-        "Chỉ cho phép upload file ảnh (jpeg, png, gif, webp, svg)"
+        "Chỉ cho phép upload file ảnh (jpeg, png, gif, webp)"
       ),
       false
     );

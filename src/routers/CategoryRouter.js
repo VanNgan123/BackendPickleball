@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const categoryController = require("../controllers/CategoryController");
-const { authMiddleware, Admin } = require("../middleware/authMiddlware");
+const { authMiddleware, Admin } = require("../middleware/authMiddleware");
 const { uploadCategoryImage, handleMulterError } = require("../middleware/uploadMiddleware");
 
 // Public routes

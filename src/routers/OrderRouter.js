@@ -1,13 +1,14 @@
 const express = require("express");
 const router = express.Router();
 const orderController = require("../controllers/OrderController");
-const { authMiddleware, Admin } = require("../middleware/authMiddlware");
-const { validateBody } = require("../middleware/validateMiddleware");
+const { authMiddleware, Admin } = require("../middleware/authMiddleware");
+const { validateBody, validateParams } = require("../middleware/validateMiddleware");
 const {
     createOrderSchema,
     createOrderFromCartSchema,
     updateOrderStatusSchema,
 } = require("../validators/orderValidator");
+const { mongoIdSchema, userIdSchema } = require("../validators/commonValidator");
 
 // User routes
 router.post(
@@ -26,7 +27,13 @@ router.post(
 
 router.get("/my-orders", authMiddleware, orderController.getMyOrders);
 
-router.get("/user/:userId", authMiddleware, orderController.getOrdersByUser);
+router.get(
+    "/user/:userId",
+    authMiddleware,
+    Admin,
+    validateParams(userIdSchema),
+    orderController.getOrdersByUser
+);
 
 // Admin routes
 router.get("/", authMiddleware, Admin, orderController.getAllOrders);
@@ -36,9 +43,16 @@ router.put(
     authMiddleware,
     Admin,
     validateBody(updateOrderStatusSchema),
+    validateParams(mongoIdSchema),
     orderController.updateOrderStatus
 );
 
-router.delete("/:id", authMiddleware, Admin, orderController.deleteOrder);
+router.delete(
+    "/:id",
+    authMiddleware,
+    Admin,
+    validateParams(mongoIdSchema),
+    orderController.deleteOrder
+);
 
 module.exports = router;

@@ -48,12 +48,12 @@ const createUser = async (name, email, password, phone) => {
 const loginUser = async (email, password) => {
   try {
     const user = await User.findOne({ email });
-    if (!user) throw new Error("Email không tồn tại");
+    if (!user) throw new Error("Email hoặc mật khẩu không đúng");
 
     if (!user.isActive) throw new Error("Tài khoản đã bị vô hiệu hóa");
 
     const comparePassword = await bcrypt.compare(password, user.password);
-    if (!comparePassword) throw new Error("Mật khẩu không đúng");
+    if (!comparePassword) throw new Error("Email hoặc mật khẩu không đúng");
 
     // Tạo cặp tokens
     const tokens = generateTokenPair({

@@ -115,12 +115,23 @@ const searchAndFilterProducts = async (filters = {}) => {
       limit = 12,
     } = filters;
 
+    const pageNumber = Math.max(Number(page) || 1, 1);
+    const limitNumber = Math.max(Number(limit) || 12, 1);
+    const minParsed = Number(minPrice);
+    const maxParsed = Number(maxPrice);
+    const min = Number.isFinite(minParsed) ? minParsed : 0;
+    const max = Number.isFinite(maxParsed) ? maxParsed : Number.MAX_VALUE;
+
     // Build query
     let query = {};
 
-    // Tìm kiếm theo tên
+    // Tìm kiếm theo tên, brand, description
     if (search) {
-      query.name = { $regex: search, $options: "i" };
+      query.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { brand: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
+      ];
     }
 
     // Lọc theo danh mục
@@ -129,7 +140,7 @@ const searchAndFilterProducts = async (filters = {}) => {
     }
 
     // Lọc theo giá
-    query.price = { $gte: minPrice, $lte: maxPrice };
+    query.price = { $gte: min, $lte: max };
 
     // Lọc theo brand
     if (brand) {
@@ -156,13 +167,13 @@ const searchAndFilterProducts = async (filters = {}) => {
     }
 
     // Pagination
-    const skip = (page - 1) * limit;
+    const skip = (pageNumber - 1) * limitNumber;
 
     const products = await Product.find(query)
       .populate("categories", "name slug")
       .sort(sortOptions)
       .skip(skip)
-      .limit(limit);
+      .limit(limitNumber);
 
     // Tính tổng số sản phẩm
     const total = await Product.countDocuments(query);
@@ -171,9 +182,9 @@ const searchAndFilterProducts = async (filters = {}) => {
       products,
       pagination: {
         total,
-        page,
-        limit,
-        pages: Math.ceil(total / limit),
+        page: pageNumber,
+        limit: limitNumber,
+        pages: Math.ceil(total / limitNumber),
       },
     };
   } catch (error) {
@@ -202,9 +213,21 @@ const updateProduct = async (id, data, files) => {
     const newImages = getImageUrls(files);
     product.image.push(...newImages);
   }
-  product.name = data.name || product.name;
-  product.price = data.price || product.price;
-  product.description = data.description || product.description;
+  if (data.name) {
+    product.name = data.name;
+    product.slug = slugify(data.name, { lower: true, strict: true });
+  }
+  if (data.price !== undefined) product.price = data.price;
+  if (data.salePrice !== undefined) product.salePrice = data.salePrice;
+  if (data.description !== undefined) product.description = data.description;
+  if (data.brand !== undefined) product.brand = data.brand;
+  if (data.stock !== undefined) product.stock = data.stock;
+  if (data.categories !== undefined) {
+    product.categories = parseCategories(data.categories);
+  }
+  if (data.specs !== undefined) {
+    product.specs = parseSpecs(data.specs);
+  }
 
   return await product.save();
 };
