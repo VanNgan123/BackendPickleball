@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const CouponController = require("../controllers/CouponController");
-const { authMiddleware, Admin } = require("../middleware/authMiddlware");
+const { authMiddleware, Admin } = require("../middleware/authMiddleware");
 
 // User routes
 router.post("/validate", CouponController.validateCoupon);

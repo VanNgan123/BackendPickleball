@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const userController = require("../controllers/UserController");
-const { authMiddleware } = require("../middleware/authMiddlware");
+const { authMiddleware } = require("../middleware/authMiddleware");
 const { authLimiter } = require("../middleware/rateLimiter");
 const { validateBody } = require("../middleware/validateMiddleware");
 const { uploadUserAvatar, handleMulterError } = require("../middleware/uploadMiddleware");

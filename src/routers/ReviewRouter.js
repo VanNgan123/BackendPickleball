@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const ReviewController = require("../controllers/ReviewController");
-const { authMiddleware, Admin } = require("../middleware/authMiddlware");
+const { authMiddleware, Admin } = require("../middleware/authMiddleware");
 const { uploadReviewImages, handleMulterError } = require("../middleware/uploadMiddleware");
 
 // User routes
