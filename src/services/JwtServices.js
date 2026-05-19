@@ -70,17 +70,10 @@ const verifyAccessToken = (token) => {
     }
 };
 
-// Legacy exports for backward compatibility
-const genneralAccessToken = generateAccessToken;
-const genneralRefreshToken = generateRefreshToken;
-
 module.exports = {
     generateAccessToken,
     generateRefreshToken,
     generateTokenPair,
     verifyRefreshToken,
     verifyAccessToken,
-    // Legacy
-    genneralAccessToken,
-    genneralRefreshToken,
 };
