@@ -7,11 +7,15 @@ const createProduct = async (req, res) => {
     const product = await productServices.createProduct(req.body, imageUrls);
 
     res.status(201).json({
-      message: "Add product success",
-      product
+      status: "OK",
+      message: "Thêm sản phẩm thành công",
+      data: product,
     });
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(400).json({
+      status: "ERR",
+      message: error.message,
+    });
   }
 };
 
@@ -19,12 +23,14 @@ const getAllProduct = async (req, res) => {
   try {
     const product = await productServices.getAllProduct();
     res.status(200).json({
-      message: "List all product",
-      product
+      status: "OK",
+      message: "Lấy danh sách sản phẩm thành công",
+      data: product,
     });
   } catch (error) {
     res.status(400).json({
-      message: error.message
+      status: "ERR",
+      message: error.message,
     });
   }
 };
@@ -33,11 +39,14 @@ const searchAndFilterProducts = async (req, res) => {
   try {
     const result = await productServices.searchAndFilterProducts(req.query);
     res.status(200).json({
-      message: "Search and filter products success",
-      ...result,
+      status: "OK",
+      message: "Tìm kiếm sản phẩm thành công",
+      data: result.products,
+      pagination: result.pagination,
     });
   } catch (error) {
     res.status(400).json({
+      status: "ERR",
       message: error.message,
     });
   }
@@ -47,12 +56,14 @@ const getProductById = async (req, res) => {
   try {
     const product = await productServices.getProductById(req.params.id);
     res.status(200).json({
-      message: "Get product by ID success",
-      product
+      status: "OK",
+      message: "Lấy sản phẩm thành công",
+      data: product,
     });
   } catch (error) {
     res.status(400).json({
-      message: error.message
+      status: "ERR",
+      message: error.message,
     });
   }
 };
@@ -64,9 +75,16 @@ const updateProduct = async (req, res) => {
       req.body,
       req.files
     );
-    res.json(updated);
+    res.json({
+      status: "OK",
+      message: "Cập nhật sản phẩm thành công",
+      data: updated,
+    });
   } catch (err) {
-    res.status(400).json({ message: err.message });
+    res.status(400).json({
+      status: "ERR",
+      message: err.message,
+    });
   }
 };
 
@@ -76,18 +94,32 @@ const deleteProductImage = async (req, res) => {
       req.params.id,
       req.params.index
     );
-    res.json(updated);
+    res.json({
+      status: "OK",
+      message: "Xóa ảnh sản phẩm thành công",
+      data: updated,
+    });
   } catch (err) {
-    res.status(400).json({ message: err.message });
+    res.status(400).json({
+      status: "ERR",
+      message: err.message,
+    });
   }
 };
 
 const deleteProduct = async (req, res) => {
   try {
     const result = await productServices.deleteProduct(req.params.id);
-    res.json(result);
+    res.json({
+      status: "OK",
+      message: "Xóa sản phẩm thành công",
+      data: result,
+    });
   } catch (err) {
-    res.status(400).json({ message: err.message });
+    res.status(400).json({
+      status: "ERR",
+      message: err.message,
+    });
   }
 };
 
