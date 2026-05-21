@@ -5,7 +5,10 @@ const orderService = require("../services/OrderServices");
  */
 const createOrder = async (req, res) => {
   try {
-    const order = await orderService.createOrder(req.body);
+    const order = await orderService.createOrder({
+      ...req.body,
+      userId: req.user.id,
+    });
     res.status(201).json({
       status: "OK",
       message: "Đặt hàng thành công",
@@ -24,11 +27,12 @@ const createOrder = async (req, res) => {
  */
 const createOrderFromCart = async (req, res) => {
   try {
-    const { userId, shippingAddress, paymentMethod } = req.body;
+    const userId = req.user.id;
+    const { shippingAddress, paymentMethod } = req.body;
     const order = await orderService.createOrderFromCart(
       userId,
       shippingAddress,
-      paymentMethod
+      paymentMethod,
     );
     res.status(201).json({
       status: "OK",
@@ -104,7 +108,7 @@ const updateOrderStatus = async (req, res) => {
   try {
     const order = await orderService.updateOrderStatus(
       req.params.id,
-      req.body.status
+      req.body.status,
     );
     res.json({
       status: "OK",

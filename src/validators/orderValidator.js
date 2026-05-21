@@ -38,10 +38,6 @@ const orderItemSchema = Joi.object({
 
 // Schema tạo đơn hàng
 const createOrderSchema = Joi.object({
-    userId: Joi.string().required().messages({
-        "string.empty": "ID người dùng không được để trống",
-        "any.required": "ID người dùng là bắt buộc",
-    }),
     items: Joi.array().items(orderItemSchema).min(1).required().messages({
         "array.min": "Đơn hàng phải có ít nhất 1 sản phẩm",
         "any.required": "Danh sách sản phẩm là bắt buộc",
@@ -60,10 +56,6 @@ const createOrderSchema = Joi.object({
 
 // Schema tạo đơn hàng từ giỏ hàng
 const createOrderFromCartSchema = Joi.object({
-    userId: Joi.string().required().messages({
-        "string.empty": "ID người dùng không được để trống",
-        "any.required": "ID người dùng là bắt buộc",
-    }),
     shippingAddress: shippingAddressSchema.required().messages({
         "any.required": "Địa chỉ giao hàng là bắt buộc",
     }),
