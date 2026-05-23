@@ -21,11 +21,12 @@ const createProduct = async (req, res) => {
 
 const getAllProduct = async (req, res) => {
   try {
-    const product = await productServices.getAllProduct();
+    const result = await productServices.getAllProduct(req.query);
     res.status(200).json({
       status: "OK",
       message: "Lấy danh sách sản phẩm thành công",
-      data: product,
+      data: result.products,
+      pagination: result.pagination,
     });
   } catch (error) {
     res.status(400).json({
