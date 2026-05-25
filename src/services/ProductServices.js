@@ -90,10 +90,46 @@ const createProduct = async (data, imageUrls) => {
   return product;
 };
 
-const getAllProduct = async () => {
+const getAllProduct = async (query = {}) => {
   try {
-    const products = await Product.find().populate("categories", "name slug");
-    return products;
+    const { page = 1, limit = 12 } = query;
+    const pageNumber = Math.max(Number(page) || 1, 1);
+    const limitNumber = Number(limit) || 12;
+
+    // limit=0 nghĩa là lấy tất cả (dùng cho Admin)
+    if (limitNumber <= 0) {
+      const products = await Product.find().populate("categories", "name slug");
+      return {
+        products,
+        pagination: {
+          total: products.length,
+          page: 1,
+          limit: products.length,
+          pages: 1,
+        },
+      };
+    }
+
+    const skip = (pageNumber - 1) * limitNumber;
+
+    const [products, total] = await Promise.all([
+      Product.find()
+        .populate("categories", "name slug")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limitNumber),
+      Product.countDocuments(),
+    ]);
+
+    return {
+      products,
+      pagination: {
+        total,
+        page: pageNumber,
+        limit: limitNumber,
+        pages: Math.ceil(total / limitNumber),
+      },
+    };
   } catch (error) {
     console.log("🚀 ~ getAllProducts ~ error:", error.message);
     throw error;
