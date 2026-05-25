@@ -25,11 +25,11 @@ const addToCart = async (userId, productId, qty = 1) => {
     await cart.save();
   }
 
-  return await cart.populate("items.productId", "name price");
+  return await cart.populate("items.productId", "name price salePrice image stock");
 };
 
 const getCartByUser = async (userId) => {
-  const cart = await Cart.findOne({ userId }).populate("items.productId", "name price");
+  const cart = await Cart.findOne({ userId }).populate("items.productId", "name price salePrice image stock");
   return cart || { userId, items: [] };
 };
 
@@ -51,7 +51,7 @@ const updateCartItem = async (userId, productId, qty) => {
   }
 
   await cart.save();
-  return await cart.populate("items.productId", "name price");
+  return await cart.populate("items.productId", "name price salePrice image stock");
 };
 
 const removeFromCart = async (userId, productId) => {
@@ -63,7 +63,7 @@ const removeFromCart = async (userId, productId) => {
   );
 
   await cart.save();
-  return await cart.populate("items.productId", "name price");
+  return await cart.populate("items.productId", "name price salePrice image stock");
 };
 
 const clearCart = async (userId) => {
